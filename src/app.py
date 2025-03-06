@@ -1,31 +1,31 @@
-from flask import Flask, url_for, request
+import os
 
-app = Flask(__name__)
+from flask import Flask
 
-@app.route("/olamundo/<usuario>/<int:idade>")
-def hello_world(usuario, idade):
-    return {
-        "usuario": usuario,
-        "idade": idade,
-    }
 
-@app.route("/bemvindo")
-def bem_vindo():
-    return {"mensagem": "Bem-vindo ao Flask"}
+def create_app(test_config=None):
+    app = Flask(__name__, instance_relative_config=True)
+    app.config.from_mapping(
+        SECRET_KEY='dev',
+        DATABASE=os.path.join(app.instance_path, 'flaskbank.sqlite'),
+    )
 
-@app.route('/projects/')
-def projects():
-    return 'The project page'
-
-@app.route('/about', methods=['GET','POST'])
-def about():
-    if request.method == 'POST':
-        return 'This is a POST request'
+    if test_config is None:
+        # load the instance config, if it exists, when not testing
+        app.config.from_pyfile('config.py', silent=True)
     else:
-        return 'This is a GET request'
+        # load the test config if passed in
+        app.config.from_mapping(test_config)
 
-with app.test_request_context():
-    print(url_for('bem_vindo'))
-    print(url_for('projects'))
-    print(url_for('about', next='/'))
-    print(url_for('hello_world', usuario='Lohan', idade=26))
+    # ensure the instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+
+    # a simple page that says hello
+    @app.route('/hello')
+    def hello():
+        return 'Hello, World!'
+
+    return app
